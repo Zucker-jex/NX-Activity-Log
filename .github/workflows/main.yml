@@ -46,7 +46,7 @@ jobs:
           make -j$(nproc)
         shell: bash
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: ./sdcard/switch/NX-Activity-Log/NX-Activity-Log.nro
