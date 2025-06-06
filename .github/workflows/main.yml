@@ -6,6 +6,10 @@ on:
 
 jobs:
   build_and_release:
+    permissions:
+      contents: write  # 允许创建 release
+      packages: write  # 允许上传 assets
+      id-token: write  # 改进 token 权限
     name: Build and release
     runs-on: ubuntu-latest
     container: devkitpro/devkita64:latest
