@@ -34,7 +34,7 @@ BUILD		:=	build
 INCLUDES	:=	include
 SOURCES		:=	source
 ROMFS		:=	romfs
-LIBS		:=	-lAether -lcurl -lnx `sdl2-config --libs` -lSDL2_ttf `freetype-config --libs` -lSDL2_gfx -lSDL2_image -lpng -ljpeg -lwebp -lSimpleIniParser -lharfbuzz
+LIBS		:=	-lAether -lcurl -lnx `sdl2-config --libs` -lSDL2_ttf `freetype-config --libs` -lSDL2_gfx -lSDL2_image -lpng -ljpeg -lwebp -lSimpleIniParser
 LIBDIRS		:=	$(PORTLIBS) $(LIBNX) $(CURDIR)/libs/Aether $(CURDIR)/libs/json $(CURDIR)/libs/SimpleIniParser
 FORWARDER	:=	$(ROMFS)/exefs.nsp
 
@@ -42,14 +42,14 @@ FORWARDER	:=	$(ROMFS)/exefs.nsp
 # Application version
 #---------------------------------------------------------------------------------
 VER_MAJOR	:= 1
-VER_MINOR	:= 5
-VER_MICRO	:= 4
+VER_MINOR	:= 4
+VER_MICRO	:= 0
 
 #---------------------------------------------------------------------------------
 # Options for .nacp information
 #---------------------------------------------------------------------------------
 APP_TITLE   := 	NX Activity Log
-APP_AUTHOR	:= 	tallbl0nde&zdm65477730
+APP_AUTHOR	:= 	tallbl0nde
 APP_VERSION	:=	$(VER_MAJOR).$(VER_MINOR).$(VER_MICRO)
 ICON 		:= 	icon.jpg
 
@@ -72,7 +72,7 @@ OUTPUT		:=	$(CURDIR)/$(TARGET)
 #---------------------------------------------------------------------------------
 DEFINES		:=	-D__SWITCH__ -DVER_MAJOR=$(VER_MAJOR) -DVER_MINOR=$(VER_MINOR) -DVER_MICRO=$(VER_MICRO) -DVER_STRING=\"$(VER_MAJOR).$(VER_MINOR).$(VER_MICRO)\"
 CFLAGS		:=	-g -Wall -O2 -ffunction-sections $(ARCH) $(DEFINES) $(INCLUDE) `freetype-config --cflags` `sdl2-config --cflags`
-CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions -std=c++23
+CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++2a
 
 #----------------------------------------------------------------------------------------------------------------------
 # Definition of variables which store file locations

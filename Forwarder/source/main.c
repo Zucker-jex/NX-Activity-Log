@@ -446,7 +446,7 @@ void loadNro(void)
         g_smCloseWorkaround = true;
     }
 
-    extern NX_NORETURN void nroEntrypointTrampoline(u64 entries_ptr, u64 handle, u64 entrypoint);
+    extern NORETURN void nroEntrypointTrampoline(u64 entries_ptr, u64 handle, u64 entrypoint);
     nroEntrypointTrampoline((u64) entries, -1, entrypoint);
 }
 

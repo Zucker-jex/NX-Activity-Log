@@ -6,10 +6,9 @@
 #include "nx/PlayData.hpp"
 #include "utils/NX.hpp"
 #include "utils/Time.hpp"
-#include "utils/Debug.hpp"
 
 // Maximum number of entries to process in one iteration
-#define MAX_PROCESS_ENTRIES 4096
+#define MAX_PROCESS_ENTRIES 1000
 
 namespace NX {
     std::vector<PD_Session> PlayData::getPDSessions(TitleID titleID, AccountUid userID, u64 start_ts, u64 end_ts) {
@@ -187,23 +186,23 @@ namespace NX {
                     PlayEvent * event;
 
                     // Populate PlayEvent based on event type
-                    switch (pEvents[i].play_event_type) {
+                    switch (pEvents[i].playEventType) {
                         case PdmPlayEventType_Account:
                             // Ignore this event if type is 2
-                            if (pEvents[i].event_data.account.type == 2) {
+                            if (pEvents[i].eventData.account.type == 2) {
                                 continue;
                             }
                             event = new PlayEvent;
                             event->type = PlayEvent_Account;
 
                             // UserID words are wrong way around (why Nintendo?)
-                            event->userID.uid[0] = pEvents[i].event_data.account.uid[0];
-                            event->userID.uid[0] = (event->userID.uid[0] << 32) | pEvents[i].event_data.account.uid[1];
-                            event->userID.uid[1] = (event->userID.uid[1] << 32) | pEvents[i].event_data.account.uid[2];
-                            event->userID.uid[1] = (event->userID.uid[1] << 32) | pEvents[i].event_data.account.uid[3];
+                            event->userID.uid[0] = pEvents[i].eventData.account.uid[0];
+                            event->userID.uid[0] = (event->userID.uid[0] << 32) | pEvents[i].eventData.account.uid[1];
+                            event->userID.uid[1] = (event->userID.uid[1] << 32) | pEvents[i].eventData.account.uid[2];
+                            event->userID.uid[1] = (event->userID.uid[1] << 32) | pEvents[i].eventData.account.uid[3];
 
                             // Set account event type
-                            switch (pEvents[i].event_data.account.type) {
+                            switch (pEvents[i].eventData.account.type) {
                                 case 0:
                                     event->eventType = Account_Active;
                                     break;
@@ -215,18 +214,18 @@ namespace NX {
 
                         case PdmPlayEventType_Applet:
                             // Ignore this event based on log policy
-                            if (pEvents[i].event_data.applet.log_policy != PdmPlayLogPolicy_All) {
+                            if (pEvents[i].eventData.applet.logPolicy != PdmPlayLogPolicy_All) {
                                 continue;
                             }
                             event = new PlayEvent;
                             event->type = PlayEvent_Applet;
 
                             // Join two halves of title ID
-                            event->titleID = pEvents[i].event_data.applet.program_id[0];
-                            event->titleID = (event->titleID << 32) | pEvents[i].event_data.applet.program_id[1];
+                            event->titleID = pEvents[i].eventData.applet.program_id[0];
+                            event->titleID = (event->titleID << 32) | pEvents[i].eventData.applet.program_id[1];
 
                             // Set applet event type
-                            switch (pEvents[i].event_data.applet.event_type) {
+                            switch (pEvents[i].eventData.applet.eventType) {
                                 case PdmAppletEventType_Launch:
                                     event->eventType = Applet_Launch;
                                     break;
@@ -244,6 +243,7 @@ namespace NX {
                                     break;
                             }
                             break;
+
                         // Do nothing for other event types
                         default:
                             continue;
@@ -251,8 +251,8 @@ namespace NX {
                     }
 
                     // Set timestamps
-                    event->clockTimestamp = pEvents[i].timestamp_user;
-                    event->steadyTimestamp = pEvents[i].timestamp_steady;
+                    event->clockTimestamp = pEvents[i].timestampUser;
+                    event->steadyTimestamp = pEvents[i].timestampSteady;
 
                     // Add PlayEvent to vector
                     ret.first.push_back(event);
@@ -262,16 +262,6 @@ namespace NX {
 
         // Free memory allocated to array
         delete[] pEvents;
-
-#ifdef ENABLE_DEBUG
-        for (auto event : ret.first) {
-            if (event->userID.uid[1] == 0 && event->userID.uid[0] == 0) {
-                Utils::write_log("offset=%d, event: type=%u titleID=%016llx applet_type: %u clockTimestamp=%llu steadyTimestamp=%llu", offset, event->type, event->titleID, event->eventType, event->clockTimestamp, event->steadyTimestamp);
-            } else {
-                Utils::write_log("offset=%d, event: type=%u userID=%016llx_%016llx account_type: %u clockTimestamp=%llu steadyTimestamp=%llu", offset, event->type, event->userID.uid[1], event->userID.uid[0], event->eventType, event->clockTimestamp, event->steadyTimestamp);
-            }
-        }
-#endif
 
         return ret;
     }
@@ -309,7 +299,7 @@ namespace NX {
                         if (event["clockTimestamp"] != nullptr && event["steadyTimestamp"] != nullptr && event["type"] != nullptr) {
                             EventType type = static_cast<EventType>(event["type"]);
 
-                            PlayEvent *evt = new PlayEvent;
+                            PlayEvent * evt = new PlayEvent;
                             evt->type = (type == Account_Active || type == Account_Inactive ? PlayEvent_Account : PlayEvent_Applet);
                             evt->userID = {user["id"][0], user["id"][1]};
                             evt->titleID = title["id"];
@@ -341,12 +331,16 @@ namespace NX {
 
                 // Store data if entry added
                 if (hasEntry) {
-                    if (std::find_if(this->titles.begin(), this->titles.end(), [title](std::pair<u64, std::string> entry) { return (title["id"] == entry.first && title["id"] != 0); }) == this->titles.end()) {
+                    std::vector<std::pair<u64, std::string>>::iterator it = std::find_if(this->titles.begin(), this->titles.end(), [title](std::pair<u64, std::string> entry) {
+                        return (title["id"] == entry.first);
+                    });
+                    if (it == this->titles.end()) {
                         this->titles.push_back(std::make_pair(title["id"], title["name"]));
                     }
                 }
             }
         }
+
         return ret;
     }
 
@@ -494,19 +488,10 @@ namespace NX {
         PdmPlayStatistics tmp;
         pdmqryQueryPlayStatisticsByApplicationIdAndUserAccountId(titleID, userID, false, &tmp);
         PlayStatistics * stats = new PlayStatistics;
-        if (tmp.first_timestamp_user != 0 && tmp.last_timestamp_user != 0) {
-            stats->firstPlayed = tmp.first_timestamp_user;
-            stats->lastPlayed = tmp.last_timestamp_user;
-        } else {
-            auto it = std::find_if(this->summaries.begin(), this->summaries.end(), [titleID](auto s){ return (s->titleID == titleID); });
-            if (it != this->summaries.end()) {
-                stats->firstPlayed = (*it)->firstPlayed;
-                stats->lastPlayed = (*it)->lastPlayed;
-            }
-        }
-
-        stats->playtime = tmp.playtime / 1000 / 1000 / 1000; //the unit of playtime in PdmPlayStatistics is ns
-        stats->launches = tmp.total_launches;
+        stats->firstPlayed = tmp.first_timestampUser;
+        stats->lastPlayed = tmp.last_timestampUser;
+        stats->playtime = tmp.playtimeMinutes * 60;
+        stats->launches = tmp.totalLaunches;
         return stats;
     }
 

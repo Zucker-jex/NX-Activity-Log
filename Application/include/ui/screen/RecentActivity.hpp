@@ -17,6 +17,10 @@ namespace Screen {
 
             // Updates the "recent activity" part of the screen
             void updateActivity();
+            // Updates graph if data matching current time range
+            void updateGraph();
+            // Updates the list of games played underneath
+            void updateTitles();
 
             // Element which marks top of sessions
             Aether::Element * topElm;

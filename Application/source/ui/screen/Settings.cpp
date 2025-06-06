@@ -95,7 +95,7 @@ namespace Screen {
     }
 
     void Settings::prepareMessageBox() {
-        //delete this->msgbox;
+        delete this->msgbox;
         this->msgbox = new Aether::MessageBox();
         this->msgbox->setLineColour(this->app->theme()->mutedLine());
         this->msgbox->setRectangleColour(this->app->theme()->altBG());
@@ -244,18 +244,6 @@ namespace Screen {
         this->msgbox->addLeftButton("common.buttonHint.cancel"_lang, [this]() {
             this->msgbox->close();
         });
-        // Add message box body
-        int bw, bh;
-        this->msgbox->getBodySize(&bw, &bh);
-        Aether::Element * body = new Aether::Element(0, 0, bw, bh);
-        Aether::TextBlock * tb = new Aether::TextBlock(50, 40, "settings.importExport.confirmDelete"_lang, 24, bw - 100);
-        tb->setColour(this->app->theme()->text());
-        body->addElement(tb);
-        tb = new Aether::TextBlock(50, tb->y() + tb->h() + 20, "settings.importExport.confirmDeleteBody"_lang, 20, bw - 100);
-        tb->setColour(this->app->theme()->mutedText());
-        body->addElement(tb);
-        this->msgbox->setBodySize(bw, tb->y() + tb->h() + 40);
-        this->msgbox->setBody(body);
         this->msgbox->addRightButton("common.delete"_lang, [this](){
             // Delete file
             std::filesystem::remove("/switch/NX-Activity-Log/importedData.json");
@@ -270,6 +258,18 @@ namespace Screen {
             this->setupGenericMessageOverlay("settings.importExport.deleteSuccessful"_lang);
         });
 
+        // Add message box body
+        int bw, bh;
+        this->msgbox->getBodySize(&bw, &bh);
+        Aether::Element * body = new Aether::Element(0, 0, bw, bh);
+        Aether::TextBlock * tb = new Aether::TextBlock(50, 40, "settings.importExport.confirmDelete"_lang, 24, bw - 100);
+        tb->setColour(this->app->theme()->text());
+        body->addElement(tb);
+        tb = new Aether::TextBlock(50, tb->y() + tb->h() + 20, "settings.importExport.confirmDeleteBody"_lang, 20, bw - 100);
+        tb->setColour(this->app->theme()->mutedText());
+        body->addElement(tb);
+        this->msgbox->setBodySize(bw, tb->y() + tb->h() + 40);
+        this->msgbox->setBody(body);
         this->app->addOverlay(this->msgbox);
     }
 

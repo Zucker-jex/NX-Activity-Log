@@ -121,7 +121,7 @@ namespace Screen {
         std::vector<AdjustmentValue> adjustments = this->app->config()->adjustmentValues();
         std::vector<NX::Title *> t = this->app->titleVector();
         std::vector<uint64_t> hidden = this->app->config()->hiddenTitles();
-        uint64_t totalSecs = 0;
+        unsigned int totalSecs = 0;
         for (size_t i = 0; i < t.size(); i++) {
             // Skip over hidden games
             if (std::find(hidden.begin(), hidden.end(), t[i]->titleID()) != hidden.end()) {
@@ -129,8 +129,7 @@ namespace Screen {
             }
 
             // Get statistics and append adjustment if needed
-            NX::RecentPlayStatistics *ps = this->app->playdata()->getRecentStatisticsForTitleAndUser(t[i]->titleID(), std::numeric_limits<u64>::min(), std::numeric_limits<u64>::max(), this->app->activeUser()->ID());
-            NX::PlayStatistics *ps2 = this->app->playdata()->getStatisticsForUser(t[i]->titleID(), this->app->activeUser()->ID());
+            NX::PlayStatistics * ps = this->app->playdata()->getStatisticsForUser(t[i]->titleID(), this->app->activeUser()->ID());
             std::vector<AdjustmentValue>::iterator it = std::find_if(adjustments.begin(), adjustments.end(), [this, t, i](AdjustmentValue val) {
                 return (val.titleID == t[i]->titleID() && val.userID == this->app->activeUser()->ID());
             });
@@ -142,13 +141,12 @@ namespace Screen {
             totalSecs += ps->playtime;
             if (ps->launches == 0) {
                 // Add in dummy data if not launched before (due to adjustment)
-                ps2->firstPlayed = Utils::Time::getTimeT(Utils::Time::getTmForCurrentTime());
-                ps2->lastPlayed = ps2->firstPlayed;
+                ps->firstPlayed = Utils::Time::posixTimestampToPdm(Utils::Time::getTimeT(Utils::Time::getTmForCurrentTime()));
+                ps->lastPlayed = ps->firstPlayed;
                 ps->launches = 1;
 
                 if (ps->playtime == 0) {
                     delete ps;
-                    delete ps2;
                     continue;
                 }
             }
@@ -157,8 +155,8 @@ namespace Screen {
             SortInfo * si = new SortInfo;
             si->name = t[i]->name();
             si->titleID = t[i]->titleID();
-            si->firstPlayed = ps2->firstPlayed;
-            si->lastPlayed = ps2->lastPlayed;
+            si->firstPlayed = ps->firstPlayed;
+            si->lastPlayed = ps->lastPlayed;
             si->playtime = ps->playtime;
             si->launches = ps->launches;
 
@@ -167,7 +165,7 @@ namespace Screen {
             la->setImage(t[i]->imgPtr(), t[i]->imgSize());
             la->setTitle(t[i]->name());
             la->setPlaytime(Utils::playtimeToPlayedForString(ps->playtime));
-            la->setLeftMuted(Utils::lastPlayedToString(ps2->lastPlayed));
+            la->setLeftMuted(Utils::lastPlayedToString(pdmPlayTimestampToPosix(ps->lastPlayed)));
             la->setRightMuted(Utils::launchesToPlayedString(ps->launches));
             la->onPress([this, i](){
                 this->app->setActiveTitle(i);
@@ -179,9 +177,6 @@ namespace Screen {
             la->setMutedColour(this->app->theme()->mutedText());
             la->setLineColour(this->app->theme()->mutedLine());
             this->list->addElement(la, si);
-
-            delete ps;
-            delete ps2;
         }
 
         // Sort the list

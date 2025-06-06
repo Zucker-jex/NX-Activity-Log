@@ -1,9 +1,7 @@
 #include "utils/NX.hpp"
-#include <algorithm>
-#include <iterator>
 
 // Maximum number of titles to read using pdm
-#define MAX_TITLES 4096
+#define MAX_TITLES 2000
 
 // Comparison of AccountUids
 bool operator == (const AccountUid &a, const AccountUid &b) {
@@ -146,14 +144,15 @@ namespace Utils::NX {
 
     std::vector<::NX::Title *> getTitleObjects(std::vector<::NX::User *> u) {
         Result rc;
+
         // Get ALL played titles for ALL users
         // (this doesn't include installed games that haven't been played)
         std::vector<TitleID> playedIDs;
-        for (auto user : u) {
+        for (unsigned short i = 0; i < u.size(); i++) {
             s32 playedTotal = 0;
             TitleID tmpID = 0;
             PdmAccountPlayEvent *userPlayEvents = new PdmAccountPlayEvent[MAX_TITLES];
-            rc = pdmqryQueryAccountPlayEvent(0, user->ID(), userPlayEvents, MAX_TITLES, &playedTotal);
+            rc = pdmqryQueryAccountPlayEvent(0, u[i]->ID(), userPlayEvents, MAX_TITLES, &playedTotal);
             if (R_FAILED(rc) || playedTotal == 0) {
                 delete[] userPlayEvents;
                 continue;
@@ -161,8 +160,16 @@ namespace Utils::NX {
 
             // Push back ID if not already in the vector
             for (s32 j = 0; j < playedTotal; j++) {
+                bool found = false;
                 tmpID = (static_cast<TitleID>(userPlayEvents[j].application_id[0]) << 32) | userPlayEvents[j].application_id[1];
-                if (std::find_if(playedIDs.begin(), playedIDs.end(), [tmpID](auto id){ return (id == tmpID && tmpID != 0); }) == playedIDs.end()) {
+                for (size_t k = 0; k < playedIDs.size(); k++) {
+                    if (playedIDs[k] == tmpID) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
                     playedIDs.push_back(tmpID);
                 }
             }
@@ -189,10 +196,17 @@ namespace Utils::NX {
 
         // Create Title objects from IDs
         std::vector<::NX::Title *> titles;
-        for (auto playedID : playedIDs) {
+        for (size_t i = 0; i < playedIDs.size(); i++) {
             // Loop over installed titles to determine if installed or not
-            bool installed = std::find_if(installedIDs.begin(), installedIDs.end(), [playedID](auto id) { return id == playedID; }) != installedIDs.end();
-            titles.push_back(new ::NX::Title(playedID, installed));
+            bool installed = false;
+            for (size_t j = 0; j < installedIDs.size(); j++) {
+                if (installedIDs[j] == playedIDs[i]) {
+                    installed = true;
+                    break;
+                }
+            }
+
+            titles.push_back(new ::NX::Title(playedIDs[i], installed));
         }
 
         return titles;
