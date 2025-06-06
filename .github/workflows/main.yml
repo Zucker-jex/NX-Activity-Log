@@ -17,8 +17,12 @@ jobs:
           sudo -n apt-get upgrade -y git build-essential
         shell: bash
       
-      - name: Install libnx
-        run: sudo dkp-pacman -Syu --noconfirm switch-dev
+      - name: Update latest libnx
+        run: |
+          git config --global --add safe.directory "*"
+          git clone --recurse-submodules https://github.com/zdm65477730/libnx.git
+          cd libnx
+          make install -j$(nproc)
         shell: bash
 
       - name: Checkout latest code
