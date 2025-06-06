@@ -2,8 +2,7 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build_and_release:
@@ -17,41 +16,42 @@ jobs:
           sudo -n apt-get update
           sudo -n apt-get upgrade -y git build-essential
         shell: bash
-      - name: Update latest libnx
-        run: |
-          git config --global --add safe.directory "*"
-          git clone --recurse-submodules https://github.com/zdm65477730/libnx.git
-          cd libnx
-          make install -j$(nproc)
+      
+      - name: Install libnx
+        run: sudo dkp-pacman -Syu --noconfirm switch-dev
         shell: bash
+
       - name: Checkout latest code
         uses: actions/checkout@v4.1.1
         with:
-          ref: main
+          ref: ${{ github.ref }}
           clean: true
           fetch-depth: 0
           fetch-tags: true
           submodules: recursive
+          
+      - name: Initialize submodules
+        run: |
+          git submodule update --init --recursive --force
+        shell: bash
+
       - name: Setup ENV parameters
         run: |
           VER_FILE=Application/Makefile
           VERSION=$(awk '/^VER_MAJOR/{print $3}' $VER_FILE).$(awk '/^VER_MINOR/{print $3}' $VER_FILE).$(awk '/^VER_MICRO/{print $3}' $VER_FILE)
-          echo "TAG=v${VERSION}" > "${GITHUB_ENV}"
-          echo "RELEASE_NAME=NX-Activity-Log v${VERSION}" >> "${GITHUB_ENV}"
+          echo "TAG=v${VERSION}" >> $GITHUB_ENV
+          echo "RELEASE_NAME=NX-Activity-Log v${VERSION}" >> $GITHUB_ENV
         shell: bash
+
       - name: Build
         run: |
           export DEVKITPRO=/opt/devkitpro
           make -j$(nproc)
         shell: bash
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2.0.9
         with:
           name: ${{ env.RELEASE_NAME }}
           tag_name: ${{ env.TAG }}
-          draft: false
-          prerelease: false
-          generate_release_notes: yes
-          make_latest: true
-          files: |
-            ./sdcard/switch/NX-Activity-Log/NX-Activity-Log.nro
+          files: ./sdcard/switch/NX-Activity-Log/NX-Activity-Log.nro
