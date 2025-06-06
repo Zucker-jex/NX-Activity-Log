@@ -34,9 +34,13 @@ jobs:
           fetch-tags: true
           submodules: recursive
           
-      - name: Initialize submodules
+      - name: Initialize submodules with force
         run: |
           git submodule update --init --recursive --force
+          if [ ! -d "Application/libs/Aether" ]; then
+            echo "::error::Aether submodule still missing!"
+            git submodule update --init --recursive --force Application/libs/Aether
+          fi
         shell: bash
 
       - name: Setup ENV parameters
