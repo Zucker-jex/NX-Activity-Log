@@ -1,16 +1,15 @@
-name: Build
+name: Release
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  issue_comment:
+    types: [ created ]
 
 jobs:
-  build:
-    name: Build
+  build_and_release:
+    name: Build and release
     runs-on: ubuntu-latest
     container: devkitpro/devkita64:latest
+    if: contains(github.event.comment.body, '/release-action')
 
     steps:
       - name: Update packages
@@ -28,7 +27,7 @@ jobs:
       - name: Checkout latest code
         uses: actions/checkout@v4.1.1
         with:
-          ref: main
+          ref: master
           clean: true
           fetch-depth: 0
           fetch-tags: true
@@ -45,8 +44,14 @@ jobs:
           export DEVKITPRO=/opt/devkitpro
           make -j$(nproc)
         shell: bash
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2.0.9
         with:
-          name: build-artifacts
-          path: ./sdcard/switch/NX-Activity-Log/NX-Activity-Log.nro
+          name: ${{ env.RELEASE_NAME }}
+          tag_name: ${{ env.TAG }}
+          draft: false
+          prerelease: false
+          generate_release_notes: yes
+          make_latest: true
+          files: |
+            ./sdcard/switch/NX-Activity-Log/NX-Activity-Log.nro

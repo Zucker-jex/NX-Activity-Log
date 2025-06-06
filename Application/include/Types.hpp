@@ -19,6 +19,8 @@ enum Language {
     ChineseTraditional,
     Chinese,
     Korean,
+    Japanese,
+    Ukrainian,
     TotalLanguages  // Total number of languages (only used for iterating)
 };
 // Return string matching language

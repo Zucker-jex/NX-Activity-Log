@@ -132,8 +132,8 @@ namespace Main {
                     nlohmann::json s = title["summary"];
                     if (s["firstPlayed"] != nullptr && s["lastPlayed"] != nullptr && s["playtime"] != nullptr && s["launches"] != nullptr) {
                         tJson["summary"] = nlohmann::json();
-                        tJson["summary"]["firstPlayed"] = Utils::Time::posixTimestampToPdm(s["firstPlayed"].get<uint64_t>());
-                        tJson["summary"]["lastPlayed"] = Utils::Time::posixTimestampToPdm(s["lastPlayed"].get<uint64_t>());
+                        tJson["summary"]["firstPlayed"] = s["firstPlayed"].get<uint64_t>();
+                        tJson["summary"]["lastPlayed"] = s["lastPlayed"].get<uint64_t>();
                         tJson["summary"]["playtime"] = s["playtime"];
                         tJson["summary"]["launches"] = s["launches"];
                     }

@@ -38,7 +38,6 @@ namespace Main {
                 // Check if played, and if not move onto next
                 NX::RecentPlayStatistics * stats = this->app->playdata_->getRecentStatisticsForTitleAndUser(title->titleID(), std::numeric_limits<u64>::min(), std::numeric_limits<u64>::max(), user->ID());
                 bool recentLaunched = (stats->launches != 0);
-                delete stats;
 
                 // Add title metadata
                 tJson["name"] = title->name();
@@ -92,10 +91,11 @@ namespace Main {
                 // Get all summary stats
                 NX::PlayStatistics * stats2 = this->app->playdata_->getStatisticsForUser(title->titleID(), user->ID());
                 bool allLaunched = (stats2->launches != 0);
-                tJson["summary"]["firstPlayed"] = pdmPlayTimestampToPosix(stats2->firstPlayed);
-                tJson["summary"]["lastPlayed"] = pdmPlayTimestampToPosix(stats2->lastPlayed);
-                tJson["summary"]["playtime"] = stats2->playtime;
-                tJson["summary"]["launches"] = stats2->launches;
+                tJson["summary"]["firstPlayed"] = stats2->firstPlayed;
+                tJson["summary"]["lastPlayed"] = stats2->lastPlayed;
+                tJson["summary"]["playtime"] = stats->playtime;
+                tJson["summary"]["launches"] = stats->launches;
+                delete stats;
                 delete stats2;
 
                 // Append title if played at least once

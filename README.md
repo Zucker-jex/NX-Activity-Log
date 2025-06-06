@@ -2,7 +2,7 @@
 
 **NX Activity Log** is a homebrew application for the Nintendo Switch which displays more precise information about your play activity.
 
-[Download](https://github.com/tallbl0nde/NX-Activity-Log/releases)
+[Download](https://github.com/zdm65477730/NX-Activity-Log/releases)
 
 Curious about what's next? See my to-do list on [Trello](https://trello.com/b/HaJ1THGq/nx-activity-log)
 
@@ -36,7 +36,7 @@ This application currently has the following features:
     * Viewing each 'Play Session'
   * Event-by-event breakdown of your activity
 * Multi-language Support
-  * English, Chinese (Simplified and Traditional), French, German, Italian, Korean, Portugese, Russian, Spanish and Turkish
+  * English, Chinese (Simplified and Traditional), French, German, Italian, Korean, Portugese, Russian, Spanish, Japanese, Ukrainian and Turkish
 * Theme Support
   * Automatic theme detection to match the Switch's colour scheme
   * Custom Themes
@@ -62,7 +62,7 @@ _Note: The data shown in Recent Activity and Details may be slightly inaccurate 
 
 If you are seeing wildly incorrect values/believe the playtime shown is incorrect within Recent Activity or the Details screen, please do the following:
 
-1. Download and run the .nro from [here](https://github.com/tallbl0nde/PlayEventParser/releases)
+1. Download and run the .nro from [here](https://github.com/zdm65477730/PlayEventParser/releases)
 2. Leave it run; if it appears to be frozen leave it for up to a minute!
 3. Once it is done there should be a playlog.txt at the root of your SD card.
 4. Create an issue with the following:
@@ -81,7 +81,7 @@ _Note: If the data shown under All Activity is incorrect there is nothing I can 
 
 ## Translations
 
-If you'd like to translate the app or fix an issue with a translation, please make a pull request to [this repo](https://github.com/tallbl0nde/NX-Activity-Log-Translations)! I'll add all the relevant code here (if need be) once I see the request :)
+If you'd like to translate the app or fix an issue with a translation, please make a pull request to [this repo](https://github.com/zdm65477730/NX-Activity-Log-Translations)! I'll add all the relevant code here (if need be) once I see the request :)
 
 ## Credits
 

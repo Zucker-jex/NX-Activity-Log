@@ -18,10 +18,6 @@ namespace Screen {
             // Used to udpate prev. screen
             bool popped;
 
-            // Updates graph if data matching current time range
-            void updateGraph();
-            // Updates the list of play sessions matching current time range
-            void updateSessions();
             // Element which marks top of sessions
             Aether::Element * topElm;
 

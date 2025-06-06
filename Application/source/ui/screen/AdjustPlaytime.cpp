@@ -117,7 +117,8 @@ namespace Screen {
             }
 
             size_t idx = std::distance(this->adjustments.begin(), it);
-            NX::PlayStatistics * stats = this->app->playdata()->getStatisticsForUser(title->titleID(), this->app->activeUser()->ID());
+            NX::RecentPlayStatistics * stats = this->app->playdata()->getRecentStatisticsForTitleAndUser(title->titleID(), std::numeric_limits<u64>::min(), std::numeric_limits<u64>::max(), this->app->activeUser()->ID());
+            //NX::PlayStatistics * stats = this->app->playdata()->getStatisticsForUser(title->titleID(), this->app->activeUser()->ID());
             CustomElm::ListAdjust * l = new CustomElm::ListAdjust(title->name(), Utils::playtimeToPlayedForString(stats->playtime), this->getValueString(this->adjustments[idx].value));
             delete stats;
 

@@ -8,7 +8,7 @@
 #include "utils/Time.hpp"
 
 // Maximum number of entries to process in one iteration
-#define MAX_PROCESS_ENTRIES 1000
+#define MAX_PROCESS_ENTRIES 4096
 
 namespace NX {
     std::vector<PD_Session> PlayData::getPDSessions(TitleID titleID, AccountUid userID, u64 start_ts, u64 end_ts) {
@@ -164,99 +164,110 @@ namespace NX {
     }
 
     PlayEventsAndSummaries PlayData::readPlayDataFromPdm() {
+        Result rc;
         PlayEventsAndSummaries ret;
 
         // Position of first event to read
         s32 offset = 0;
         // Total events read in iteration
-        s32 total_read = 1;
+        s32 playedTotal = 1;
 
         // Array to store read events
-        PdmPlayEvent * pEvents = new PdmPlayEvent[MAX_PROCESS_ENTRIES];
+        PdmPlayEvent *pEvents = new PdmPlayEvent[MAX_PROCESS_ENTRIES];
 
         // Read all events
-        while (total_read > 0) {
-            Result rc = pdmqryQueryPlayEvent(offset, pEvents, MAX_PROCESS_ENTRIES, &total_read);
-            if (R_SUCCEEDED(rc)) {
-                // Set next read position to next event
-                offset += total_read;
+        while (playedTotal > 0) {
+            memset(pEvents, 0, MAX_PROCESS_ENTRIES * sizeof(PdmPlayEvent));
+            rc = pdmqryQueryPlayEvent(offset, pEvents, MAX_PROCESS_ENTRIES, &playedTotal);
+            if (R_FAILED(rc) || playedTotal == 0) {
+                break;
+            }
 
-                // Process read events
-                for (s32 i = 0; i < total_read; i++) {
-                    PlayEvent * event;
+            // Set next read position to next event
+            offset += playedTotal;
 
-                    // Populate PlayEvent based on event type
-                    switch (pEvents[i].playEventType) {
-                        case PdmPlayEventType_Account:
-                            // Ignore this event if type is 2
-                            if (pEvents[i].eventData.account.type == 2) {
-                                continue;
-                            }
-                            event = new PlayEvent;
-                            event->type = PlayEvent_Account;
+            // Process read events
+            for (s32 i = 0; i < playedTotal; i++) {
+                PlayEvent *event;
+                TitleID tmpID;
 
-                            // UserID words are wrong way around (why Nintendo?)
-                            event->userID.uid[0] = pEvents[i].eventData.account.uid[0];
-                            event->userID.uid[0] = (event->userID.uid[0] << 32) | pEvents[i].eventData.account.uid[1];
-                            event->userID.uid[1] = (event->userID.uid[1] << 32) | pEvents[i].eventData.account.uid[2];
-                            event->userID.uid[1] = (event->userID.uid[1] << 32) | pEvents[i].eventData.account.uid[3];
-
-                            // Set account event type
-                            switch (pEvents[i].eventData.account.type) {
-                                case 0:
-                                    event->eventType = Account_Active;
-                                    break;
-                                case 1:
-                                    event->eventType = Account_Inactive;
-                                    break;
-                            }
-                            break;
-
-                        case PdmPlayEventType_Applet:
-                            // Ignore this event based on log policy
-                            if (pEvents[i].eventData.applet.logPolicy != PdmPlayLogPolicy_All) {
-                                continue;
-                            }
-                            event = new PlayEvent;
-                            event->type = PlayEvent_Applet;
-
-                            // Join two halves of title ID
-                            event->titleID = pEvents[i].eventData.applet.program_id[0];
-                            event->titleID = (event->titleID << 32) | pEvents[i].eventData.applet.program_id[1];
-
-                            // Set applet event type
-                            switch (pEvents[i].eventData.applet.eventType) {
-                                case PdmAppletEventType_Launch:
-                                    event->eventType = Applet_Launch;
-                                    break;
-                                case PdmAppletEventType_Exit:
-                                case PdmAppletEventType_Exit5:
-                                case PdmAppletEventType_Exit6:
-                                    event->eventType = Applet_Exit;
-                                    break;
-                                case PdmAppletEventType_InFocus:
-                                    event->eventType = Applet_InFocus;
-                                    break;
-                                case PdmAppletEventType_OutOfFocus:
-                                case PdmAppletEventType_OutOfFocus4:
-                                    event->eventType = Applet_OutFocus;
-                                    break;
-                            }
-                            break;
-
-                        // Do nothing for other event types
-                        default:
+                // Populate PlayEvent based on event type
+                switch (pEvents[i].play_event_type) {
+                    case PdmPlayEventType_Account:
+                        // Ignore this event if type is 2
+                        if (pEvents[i].event_data.account.type == 2) {
                             continue;
-                            break;
-                    }
+                        }
 
-                    // Set timestamps
-                    event->clockTimestamp = pEvents[i].timestampUser;
-                    event->steadyTimestamp = pEvents[i].timestampSteady;
+                        event = new PlayEvent;
+                        event->type = PlayEvent_Account;
 
-                    // Add PlayEvent to vector
-                    ret.first.push_back(event);
+                        // UserID words are wrong way around (why Nintendo?)
+                        event->userID.uid[0] = pEvents[i].event_data.account.uid[0];
+                        event->userID.uid[0] = (event->userID.uid[0] << 32) | pEvents[i].event_data.account.uid[1];
+                        event->userID.uid[1] = (event->userID.uid[1] << 32) | pEvents[i].event_data.account.uid[2];
+                        event->userID.uid[1] = (event->userID.uid[1] << 32) | pEvents[i].event_data.account.uid[3];
+
+                        // Set account event type
+                        switch (pEvents[i].event_data.account.type) {
+                            case 0:
+                                event->eventType = Account_Active;
+                                break;
+                            case 1:
+                                event->eventType = Account_Inactive;
+                                break;
+                        }
+                        break;
+                    case PdmPlayEventType_Applet:
+                        // Ignore this event based on log policy
+                        if (pEvents[i].event_data.applet.log_policy != PdmPlayLogPolicy_All) {
+                            continue;
+                        }
+
+                        // Ignore event with titleID 0
+                        tmpID = pEvents[i].event_data.applet.program_id[0];
+                        tmpID = (tmpID << 32) | pEvents[i].event_data.applet.program_id[1];
+                        if (tmpID == 0) {
+                            continue;
+                        }
+
+                        event = new PlayEvent;
+                        event->type = PlayEvent_Applet;
+
+                        // Join two halves of title ID
+                        event->titleID = tmpID;
+
+                        // Set applet event type
+                        switch (pEvents[i].event_data.applet.event_type) {
+                            case PdmAppletEventType_Launch:
+                                event->eventType = Applet_Launch;
+                                break;
+                            case PdmAppletEventType_Exit:
+                            case PdmAppletEventType_Exit5:
+                            case PdmAppletEventType_Exit6:
+                                event->eventType = Applet_Exit;
+                                break;
+                            case PdmAppletEventType_InFocus:
+                                event->eventType = Applet_InFocus;
+                                break;
+                            case PdmAppletEventType_OutOfFocus:
+                            case PdmAppletEventType_OutOfFocus4:
+                                event->eventType = Applet_OutFocus;
+                                break;
+                        }
+                        break;
+                    // Do nothing for other event types
+                    default:
+                        continue;
+                        break;
                 }
+
+                // Set timestamps
+                event->clockTimestamp = pEvents[i].timestamp_user;
+                event->steadyTimestamp = pEvents[i].timestamp_steady;
+
+                // Add PlayEvent to vector
+                ret.first.push_back(event);
             }
         }
 
@@ -291,6 +302,10 @@ namespace NX {
 
             // Iterate over each title
             for (nlohmann::json title : user["titles"]) {
+                if (title["id"] == 0) {
+                    continue;
+                }
+
                 bool hasEntry = false;
 
                 // Create events for title
@@ -299,7 +314,7 @@ namespace NX {
                         if (event["clockTimestamp"] != nullptr && event["steadyTimestamp"] != nullptr && event["type"] != nullptr) {
                             EventType type = static_cast<EventType>(event["type"]);
 
-                            PlayEvent * evt = new PlayEvent;
+                            PlayEvent *evt = new PlayEvent;
                             evt->type = (type == Account_Active || type == Account_Inactive ? PlayEvent_Account : PlayEvent_Applet);
                             evt->userID = {user["id"][0], user["id"][1]};
                             evt->titleID = title["id"];
@@ -331,16 +346,14 @@ namespace NX {
 
                 // Store data if entry added
                 if (hasEntry) {
-                    std::vector<std::pair<u64, std::string>>::iterator it = std::find_if(this->titles.begin(), this->titles.end(), [title](std::pair<u64, std::string> entry) {
-                        return (title["id"] == entry.first);
-                    });
-                    if (it == this->titles.end()) {
-                        this->titles.push_back(std::make_pair(title["id"], title["name"]));
+                    if (std::find_if(this->titles.begin(), this->titles.end(), [title](std::pair<u64, std::string> entry) { return (title["id"] == entry.first); }) == this->titles.end()) {
+                        if (title["id"] != 0) {
+                            this->titles.push_back(std::make_pair(title["id"], title["name"]));
+                        }
                     }
                 }
             }
         }
-
         return ret;
     }
 
@@ -488,10 +501,19 @@ namespace NX {
         PdmPlayStatistics tmp;
         pdmqryQueryPlayStatisticsByApplicationIdAndUserAccountId(titleID, userID, false, &tmp);
         PlayStatistics * stats = new PlayStatistics;
-        stats->firstPlayed = tmp.first_timestampUser;
-        stats->lastPlayed = tmp.last_timestampUser;
-        stats->playtime = tmp.playtimeMinutes * 60;
-        stats->launches = tmp.totalLaunches;
+        if (tmp.first_timestamp_user != 0 && tmp.last_timestamp_user != 0) {
+            stats->firstPlayed = tmp.first_timestamp_user;
+            stats->lastPlayed = tmp.last_timestamp_user;
+        } else {
+            auto it = std::find_if(this->summaries.begin(), this->summaries.end(), [titleID](auto s){ return (s->titleID == titleID); });
+            if (it != this->summaries.end()) {
+                stats->firstPlayed = (*it)->firstPlayed;
+                stats->lastPlayed = (*it)->lastPlayed;
+            }
+        }
+
+        stats->playtime = tmp.playtime / 1000 / 1000 / 1000; //the unit of playtime in PdmPlayStatistics is ns
+        stats->launches = tmp.total_launches;
         return stats;
     }
 

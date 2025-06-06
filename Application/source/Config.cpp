@@ -46,6 +46,10 @@ namespace Main {
             this->gLang_ = Chinese;
         } else if (option->value == "Korean") {
             this->gLang_ = Korean;
+        } else if (option->value == "Japanese") {
+            this->gLang_ = Japanese;
+        } else if (option->value == "Ukrainian") {
+            this->gLang_ = Ukrainian;
         } else {
             this->gLang_ = Default;
         }
@@ -125,7 +129,10 @@ namespace Main {
         std::ifstream file("/config/NX-Activity-Log/hidden.conf");
         std::string line;
         while (file >> line) {
-            this->hidden.push_back(Utils::stringToU64(line));
+            uint64_t hiddenTitle = Utils::stringToU64(line);
+            if (hiddenTitle != 0) {
+                this->hidden.push_back(hiddenTitle);
+            }
         }
 
         // Read in adjustment values
@@ -186,6 +193,10 @@ namespace Main {
             option->value = "Chinese";
         } else if (this->gLang_ == Korean) {
             option->value = "Korean";
+        } else if (this->gLang_ == Japanese) {
+            option->value = "Japanese";
+        } else if (this->gLang_ == Ukrainian) {
+            option->value = "Ukrainian";
         }
 
         option = ini->findSection("general")->findFirstOption("showGraphValues");

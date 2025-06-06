@@ -18,7 +18,7 @@ namespace Utils {
         char logstr[MAX_LOG_LEN] = { 0 };
         va_list args;
         va_start(args, pszFmt);
-        snprintf(logstr, MAX_LOG_LEN, pszFmt, args);
+        vsnprintf(logstr, MAX_LOG_LEN, pszFmt, args);
         va_end(args);
 
         std::lock_guard<std::mutex> lock(Utils::mutex);

@@ -80,6 +80,14 @@ namespace Utils::Lang {
             case Korean:
                 path = "romfs:/lang/ko.json";
                 break;
+            
+            case Japanese:
+                path = "romfs:/lang/ja.json";
+                break;
+
+            case Ukrainian:
+                path = "romfs:/lang/ua.json";
+                break;
 
             default:
                 break;
