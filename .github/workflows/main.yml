@@ -50,7 +50,7 @@ jobs:
         run: |
           # Update the dkp-pacman database and install required cross packages
           sudo dkp-pacman -Syu --noconfirm
-          sudo dkp-pacman -S --noconfirm switch-freetype switch-harfbuzz pkgconf
+          sudo dkp-pacman -S --noconfirm switch-freetype switch-harfbuzz pkg-config
           # Ensure DEVKITPRO path
           export DEVKITPRO=/opt/devkitpro
           # Make sure pkg-config can find cross pkgconfig files from devkitPro
