@@ -20,6 +20,7 @@ jobs:
           sudo -n apt-get update
           sudo -n apt-get upgrade -y git build-essential
         shell: bash
+
       - name: Update latest libnx
         run: |
           git config --global --add safe.directory "*"
@@ -27,6 +28,7 @@ jobs:
           cd libnx
           make install -j$(nproc)
         shell: bash
+
       - name: Checkout latest code
         uses: actions/checkout@v4.1.1
         with:
@@ -35,6 +37,7 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           submodules: recursive
+
       - name: Setup ENV parameters
         run: |
           VER_FILE=Application/Makefile
@@ -42,11 +45,47 @@ jobs:
           echo "TAG=v${VERSION}" > "${GITHUB_ENV}"
           echo "RELEASE_NAME=NX-Activity-Log v${VERSION}" >> "${GITHUB_ENV}"
         shell: bash
+
+      - name: Install devkitPro packages (freetype, harfbuzz)
+        run: |
+          # Update the dkp-pacman database and install required cross packages
+          sudo dkp-pacman -Syu --noconfirm
+          sudo dkp-pacman -S --noconfirm switch-freetype switch-harfbuzz pkgconf
+          # Ensure DEVKITPRO path
+          export DEVKITPRO=/opt/devkitpro
+          # Make sure pkg-config can find cross pkgconfig files from devkitPro
+          export PKG_CONFIG_PATH="/opt/devkitpro/libnx/lib/pkgconfig:/opt/devkitpro/devkitA64/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+        shell: bash
+
+      - name: Verify freetype / harfbuzz availability
+        run: |
+          export DEVKITPRO=/opt/devkitpro
+          export PKG_CONFIG_PATH="/opt/devkitpro/libnx/lib/pkgconfig:/opt/devkitpro/devkitA64/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+          echo "freetype pkg-config available?"
+          if pkg-config --exists freetype2; then
+            echo "freetype2: $(pkg-config --modversion freetype2)"
+          else
+            echo "freetype2 pkg-config not found"
+          fi
+          echo "harfbuzz pkg-config available?"
+          if pkg-config --exists harfbuzz; then
+            echo "harfbuzz: $(pkg-config --modversion harfbuzz)"
+          else
+            echo "harfbuzz pkg-config not found"
+          fi
+        shell: bash
+
       - name: Build
         run: |
           export DEVKITPRO=/opt/devkitpro
-          make -j$(nproc)
+          # Ensure pkg-config path for the build
+          export PKG_CONFIG_PATH="/opt/devkitpro/libnx/lib/pkgconfig:/opt/devkitpro/devkitA64/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+          # Append the C++ linker flags to ensure FreeType and HarfBuzz are linked.
+          # The Makefile will pick up LDFLAGS or LIBS if it respects them; both are passed to be safe.
+          make LDFLAGS+=" -lharfbuzz -lfreetype" LIBS+=" -lharfbuzz -lfreetype" -j$(nproc)
         shell: bash
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2.0.9
         with:
