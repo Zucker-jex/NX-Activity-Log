@@ -34,7 +34,7 @@ BUILD		:=	build
 INCLUDES	:=	include
 SOURCES		:=	source
 ROMFS		:=	romfs
-LIBS		:=	-lAether -lcurl -lnx `sdl2-config --libs` -lSDL2_ttf `freetype-config --libs` -lSDL2_gfx -lSDL2_image -lpng -ljpeg -lwebp -lSimpleIniParser -lharfbuzz
+LIBS		:=	-lAether -lcurl -lnx `sdl2-config --libs` -lSDL2_ttf `freetype-config --libs` -lSDL2_gfx -lSDL2_image -lpng -ljpeg -lwebp -lSimpleIniParser -lharfbuzz -lfreetype
 LIBDIRS		:=	$(PORTLIBS) $(LIBNX) $(CURDIR)/libs/Aether $(CURDIR)/libs/json $(CURDIR)/libs/SimpleIniParser
 FORWARDER	:=	$(ROMFS)/exefs.nsp
 
