@@ -48,14 +48,21 @@ jobs:
 
       - name: Install devkitPro packages (freetype, harfbuzz)
         run: |
+          # Ensure system pkg-config is available (dkp-pacman repositories do not always provide pkg-config)
+          sudo -n apt-get update
+          sudo -n apt-get install -y pkg-config
+
           # Update the dkp-pacman database and install required cross packages
           sudo dkp-pacman -Syu --noconfirm
-          sudo dkp-pacman -S --noconfirm switch-freetype switch-harfbuzz pkg-config
+          sudo dkp-pacman -S --noconfirm switch-freetype switch-harfbuzz
+
           # Ensure DEVKITPRO path
           export DEVKITPRO=/opt/devkitpro
           # Make sure pkg-config can find cross pkgconfig files from devkitPro
           export PKG_CONFIG_PATH="/opt/devkitpro/libnx/lib/pkgconfig:/opt/devkitpro/devkitA64/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+          echo "pkg-config: $(which pkg-config || echo 'not found')"
+          echo "pkg-config version: $(pkg-config --version 2>/dev/null || echo 'none')"
         shell: bash
 
       - name: Verify freetype / harfbuzz availability
